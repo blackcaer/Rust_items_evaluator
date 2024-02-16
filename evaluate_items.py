@@ -32,6 +32,8 @@ def handle_input(lines):
     # <name>            - returns {"name": _,"quantity":_}
     #
     # TODO handle multiple same items, return their quantity
+    if ',' in lines[0]:
+        raise RuntimeError("DONT USE COMMA")
 
     def extract_data(line):
         # Extracts data from format <name> $<price>
@@ -84,10 +86,6 @@ async def main():
             for i in data:
                 names.append(i["name"])
 
-            # names = lines   # temporary
-
-            # 1/0
-
             async with aiohttp.ClientSession() as session:
                 ItemRust.set_session(session)
                 item_fetch_tasks = set()
@@ -103,7 +101,8 @@ async def main():
                     values.append({"name": curr_item.name, "liqval": liqval, "data": curr_item})
 
                 table = PrettyTable(reversesort=True)
-                table.field_names = ["name", "price_sm", "per_day", "liq_val", "value"]
+                table.field_names = ["name", "price_sm", "per_day", "liq_val", "value", "sp/sm", "% sp/sm"]
+                rows = []
                 avgdata = {"prices": [], "values": []}  # data for weighted average
 
                 # prepare rows of prettytable
@@ -112,19 +111,31 @@ async def main():
 
                     if curr_item is not None and r["liqval"] is not None and r["data"].all_success:
                         price_sm = curr_item.price_sm / 100
-                        perday = curr_item.sales_sm["30"]["volume"] / 30
+                        perday = curr_item.calc_sales_extrapolated_sm(30)[
+                                     "volume"] / 30  # curr_item.sales_sm["30"]["volume"] / 30
                         value = curr_item.calc_value(None)
 
-                        table.add_row([name,
+                        rows.append([name,
                                        price_sm,
                                        round(perday, 2),
                                        round(liqval, 2),
-                                       value])
+                                       value,
+                                       round((curr_item.price_sp / 100) / price_sm, 2),
+                                       str(round((curr_item.price_sp / 100) / price_sm * 100 - 100)) + "%"
+                                       ])
                         avgdata["prices"].append(price_sm)
                         avgdata["values"].append(value)
                     else:
                         print(r["name"] + " FAILURE")
 
+                for row in rows:
+                    table.add_row(row)
+
+                print("Sorting by sp/sm")
+                table.sortby = "sp/sm"
+                print(table)
+
+                print("Sorting by value")
                 table.sortby = "value"
                 print(table)
 
@@ -136,7 +147,8 @@ async def main():
                 else:
                     print("Weighted average " + str(wavg))
 
-                print("\n")
+                print()
+                print()
 
 
     except Exception as e:

@@ -1,11 +1,9 @@
 import asyncio
 import json
 import traceback
-
 import aiohttp
 import jsonpickle
 from prettytable import PrettyTable
-
 from ItemRust import ItemRust
 from ItemRustDatabase import ItemRustDatabase
 
@@ -22,7 +20,7 @@ async def fetch_and_calc(name):
 
 
 def rch_shop_to_tab():
-    with open('rchshop.txt', 'r') as f:
+    with open('src/rchshop.txt', 'r') as f:
         res = json.load(f)
 
     # TODO only for tests
@@ -32,24 +30,8 @@ def rch_shop_to_tab():
     return res
 
 
-def show_table(values):
-    values = [r for r in values
-              if r["data"] is not None and r["value"] is not None and r["data"].all_success]
-
-    table = PrettyTable()
-    table.field_names = ["name", "per_day", "price", "liq_val", "val"]
-    for r in values:
-        price_sm = r["data"].price_sm / 100
-        perday = r["data"].sales_sm["30"]["volume"] / 30
-        val2 = round(r["value"] * price_sm ** (1 / 2), 2)
-        table.add_row([r["name"], round(perday, 2), price_sm, round(r["value"], 2), val2])
-
-    table.sortby = "val"
-    table.reversesort = True
-    print(table)
-
-
 def show_table_rchshop(values):
+    rows = []
     values = [r for r in values
               if r["data"] is not None and r["liqval"] is not None and r["data"].all_success]
 
@@ -71,7 +53,7 @@ def show_table_rchshop(values):
         # if price_sm<0.7 or perday<14:# or (price_sm<12 and liqval<1):
         #    continue
 
-        table.add_row([record["name"],
+        rows.append([record["name"],
                        record["quantity"],
                        str(round(price_sm / price_rch * 100 - 100)) + "%",
                        price_rch,
@@ -83,18 +65,19 @@ def show_table_rchshop(values):
                        str(round((itemrust.price_sp / 100) / price_sm * 100 - 100)) + "%"
                        ])
 
+    for row in rows:
+        table.add_row(row)
     # print("sort by value:")
     # table.sortby = "value"
     # print(table)
-
-    print("sort by value:")
-    table.sortby = "value"
-    print(table)
 
     print("sort by sp/sm:")
     table.sortby = "sp/sm"
     print(table)
 
+    print("sort by value:")
+    table.sortby = "value"
+    print(table)
 
 async def rch_shop_all():
     TEST = 0
@@ -109,7 +92,7 @@ async def rch_shop_all():
         obj_to_save = list()
 
         if TEST:
-            with open('tmp_shop_data.json', 'r') as file:
+            with open('src/tmp_shop_data.json', 'r') as file:
                 loaded_test_data = jsonpickle.decode(file.read())
             print("Loaded test data (from one of previous fetches)")
 
@@ -156,47 +139,11 @@ async def main():
 
         await rch_shop_all()
 
-        return 0
-        names = ["Weapon barrel", "Legacy kevlar kilt", "Tempered AK47", "Alien Red", "Cloth", "Frostbite",
-                 "Neon Stone Storage", "Gingerbread Double Door", "Raven", "Sacrificial Mask", "Box from Hell",
-                 "Doors to a Fairy Tale"]
-        names = ["Weapon barrel", "Legacy kevlar kilt", "Tempered AK47"]
-        # names = ["Weapon barrel"]
-
-        values = []
-
-        item_fetch_tasks = set()
-        async with aiohttp.ClientSession() as session:
-            ItemRust.set_session(session)
-            i = ItemRust("Weapon barrel")
-
-            for name in names:
-                task = asyncio.create_task(fetch_and_calc(name))
-                item_fetch_tasks.add(task)
-
-            for task in item_fetch_tasks:
-                tmp = await task
-                liqval = tmp[0]
-                itemrust = tmp[1]
-                values.append({"name": itemrust.name, "value": liqval, "data": itemrust})
-
-            show_table(values)
-
-            input("")
-
     except Exception as e:
         print("Unexpected error: ", str(e.args[0]), " ", e.__cause__)
         traceback.print_exc()
         input(" ")
 
-
-"""
-    if res.success:
-        print(res.data)
-    else:
-        print("ERROR: ")
-        print(res.errors)
-"""
 
 if __name__ == "__main__":
     asyncio.run(main())
