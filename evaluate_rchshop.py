@@ -54,16 +54,16 @@ def show_table_rchshop(values):
         #    continue
 
         rows.append([record["name"],
-                       record["quantity"],
-                       str(round(price_sm / price_rch * 100 - 100)) + "%",
-                       price_rch,
-                       price_sm,
-                       perday,
-                       liqval,
-                       value,
-                       round((itemrust.price_sp / 100) / price_sm, 2),
-                       str(round((itemrust.price_sp / 100) / price_sm * 100 - 100)) + "%"
-                       ])
+                     record["quantity"],
+                     str(round(price_sm / price_rch * 100 - 100)) + "%",
+                     price_rch,
+                     price_sm,
+                     perday,
+                     liqval,
+                     value,
+                     round((itemrust.price_sp / 100) / price_sm, 2),
+                     str(round((itemrust.price_sp / 100) / price_sm * 100 - 100)) + "%"
+                     ])
 
     for row in rows:
         table.add_row(row)
@@ -78,6 +78,7 @@ def show_table_rchshop(values):
     print("sort by value:")
     table.sortby = "value"
     print(table)
+
 
 async def rch_shop_all():
     TEST = 0

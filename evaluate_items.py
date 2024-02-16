@@ -1,16 +1,7 @@
 import asyncio
-
 import aiohttp
 from prettytable import PrettyTable
-
 from ItemRust import ItemRust
-
-
-async def fetch_and_calc(name):
-    i = ItemRust(name)
-    await i.update_async()
-
-    return [i.calc_liqval(), i]
 
 
 def weighted_average(data, weights):
@@ -61,44 +52,40 @@ def handle_input(lines):
         return [extract_data(l) for l in lines]
 
 
+def get_input():
+    print("Wklej dane (lub wpisz naciskając Enter po każdej linii,a po wprowadzeniu wszystkich danych \n"
+          "naciśnij Enter bez wprowadzania tekstu): ")
+
+    lines = []
+    while True:
+        line = input()
+        if not line:
+            break
+        lines.append(line)
+
+    return handle_input(lines)
+
+
 async def main():
     try:
         while True:
-            names = []
-            values = []
-
-            # names += input("Podaj nazwy przedmiotów oddzielone przecinkami: \n").split(',')
-
-            lines = []
-
-            print("Wklej dane (lub wpisz naciskając Enter po każdej linii,a po wprowadzeniu wszystkich danych \n"
-                  "naciśnij Enter bez wprowadzania tekstu): ")
-
-            while True:
-                line = input()
-                if not line:
-                    break
-                lines.append(line)
-
-            data = handle_input(lines)
-            print(data)
-            names = []
-            for i in data:
-                names.append(i["name"])
+            records = get_input()
 
             async with aiohttp.ClientSession() as session:
                 ItemRust.set_session(session)
                 item_fetch_tasks = set()
+                items = []
 
                 # create tasks
-                for name in names:
-                    task = asyncio.create_task(fetch_and_calc(name))
-                    item_fetch_tasks.add(task)
+                for record in records:
+                    itemrust = ItemRust(record["name"])
+                    items.append(itemrust)
+                    item_fetch_tasks.add(
+                        asyncio.create_task(itemrust.update_async()))
 
                 # gather results, prepare values tab for displaying
                 for task in item_fetch_tasks:
-                    liqval, curr_item = await task
-                    values.append({"name": curr_item.name, "liqval": liqval, "data": curr_item})
+                    await task
 
                 table = PrettyTable(reversesort=True)
                 table.field_names = ["name", "price_sm", "per_day", "liq_val", "value", "sp/sm", "% sp/sm"]
@@ -106,27 +93,28 @@ async def main():
                 avgdata = {"prices": [], "values": []}  # data for weighted average
 
                 # prepare rows of prettytable
-                for r in values:
-                    name, liqval, curr_item = r["name"], r["liqval"], r["data"]
+                for curr_item in items:
+                    name = curr_item.name
+                    liqval = curr_item.calc_liqval()
 
-                    if curr_item is not None and r["liqval"] is not None and r["data"].all_success:
+                    if curr_item is not None and liqval is not None and curr_item.all_success:
                         price_sm = curr_item.price_sm / 100
                         perday = curr_item.calc_sales_extrapolated_sm(30)[
                                      "volume"] / 30  # curr_item.sales_sm["30"]["volume"] / 30
                         value = curr_item.calc_value(None)
 
                         rows.append([name,
-                                       price_sm,
-                                       round(perday, 2),
-                                       round(liqval, 2),
-                                       value,
-                                       round((curr_item.price_sp / 100) / price_sm, 2),
-                                       str(round((curr_item.price_sp / 100) / price_sm * 100 - 100)) + "%"
-                                       ])
+                                     price_sm,
+                                     round(perday, 2),
+                                     round(liqval, 2),
+                                     value,
+                                     round((curr_item.price_sp / 100) / price_sm, 2),
+                                     str(round((curr_item.price_sp / 100) / price_sm * 100 - 100)) + "%"
+                                     ])
                         avgdata["prices"].append(price_sm)
                         avgdata["values"].append(value)
                     else:
-                        print(r["name"] + " FAILURE")
+                        print(name + " FAILURE")
 
                 for row in rows:
                     table.add_row(row)
