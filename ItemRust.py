@@ -20,6 +20,7 @@ class ItemRust:
 
     def __init__(self, name):
         self.name = name
+        self.quantity = 1
 
         self.all_success = False
 
@@ -270,7 +271,7 @@ class ItemRust:
 
         return result
 
-    def calc_liqval(self, total_amount=1):
+    def calc_liqval(self, MIN_LIQVAL_VALUE = 0.01):
         """ Calculate liquidity value factor.
         Function made via graphic func creator (Desmos) to represent subjective liquidity value of an item
         based on it's """
@@ -278,14 +279,14 @@ class ItemRust:
         if sales_ex is None:
             return None
         sold_per_day = sales_ex["volume"] / (30 + self._today_frac())
-        MIN_VALUE = 0.04
+        #MIN_SOLRPERDAY_VALUE = 0.04 # value of it *10 equals sold_per_day which will be lower border of liqval
         w2 = 7
         k1 = 0.4
         k2 = 1 / (w2 - (1 / k1))
         c = 2.1
         d = 1.5
-        m = 1
-        n = 1
+        m = 1.2
+        n = 0.7
         o = 2
 
         def f1(x):
@@ -298,11 +299,11 @@ class ItemRust:
             return 1 * ((a - 0.1) * m) ** (1 / n) + 1
 
         x = sold_per_day / 10.0  # Formula detail
-        a = total_amount / 10.0  # Formula detail
+        a = self.quantity / 10.0  # Formula detail
 
-        if x <= MIN_VALUE:
-            func_evaluated = f1(MIN_VALUE)
-        elif MIN_VALUE < x < 1 / k1:
+        #if x <= MIN_SOLRPERDAY_VALUE:
+        #    func_evaluated = f1(MIN_SOLRPERDAY_VALUE)
+        if 0 < x < 1 / k1:
             func_evaluated = f1(x)
         elif 1 / k1 <= x:
             func_evaluated = f2(x)
@@ -310,6 +311,9 @@ class ItemRust:
             raise ValueError("Unsupported range")
 
         result = func_evaluated / i(a) ** (o / x)
+
+        if result < MIN_LIQVAL_VALUE:
+            result = MIN_LIQVAL_VALUE
         return result
 
     def calc_value(self, price_shop=None):
