@@ -18,6 +18,10 @@ class ItemRust:
     def set_session(cls, session):
         cls.session = session
 
+    @classmethod
+    def set_database(cls, database):
+        cls.database = database
+
     def __init__(self, name, quantity=1):
         self.name = name
 

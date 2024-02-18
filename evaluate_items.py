@@ -3,7 +3,7 @@ import aiohttp
 from prettytable import PrettyTable
 from ItemRust import ItemRust
 from collections import Counter
-
+from ItemRustDatabase import ItemRustDatabase
 
 def weighted_average(data, weights):
     if len(data) != len(weights):
@@ -76,11 +76,13 @@ def get_input():
 
 async def main():
     # try:
-    while True:
-        records = get_input()
+    ITEMDB = ItemRustDatabase().load()
+    async with aiohttp.ClientSession() as session:
+        ItemRust.set_session(session)
+        ItemRust.set_database(ITEMDB)
 
-        async with aiohttp.ClientSession() as session:
-            ItemRust.set_session(session)
+        while True:
+            records = get_input()
             item_fetch_tasks = set()
             items = []
 
