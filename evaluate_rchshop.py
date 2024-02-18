@@ -24,7 +24,7 @@ def rch_shop_to_tab():
         res = json.load(f)
 
     # TODO only for tests
-    res = res[:5]
+    #res = res[:5]
     # res = [{"name": "Weapon Barrel", "price": 13.53, "quantity": 2}]
 
     return res
@@ -81,8 +81,8 @@ def show_table_rchshop(values):
 
 
 async def rch_shop_all():
-    TEST = 0
-    SAVE_FOR_TEST = 1  # Saves data if TEST is False
+    TEST = 1
+    SAVE_FOR_TEST = 0  # Saves data if TEST is False
     shop = rch_shop_to_tab()
 
     item_fetch_tasks = set()
@@ -123,7 +123,7 @@ async def rch_shop_all():
                            "data": itemrust})
 
         if SAVE_FOR_TEST:
-            with open('tmp_shop_data.json', 'w') as f:
+            with open('src/tmp_shop_data.json', 'w') as f:
                 # json.dump(obj_to_save, f)
                 json_data = jsonpickle.encode(obj_to_save)
                 f.write(json_data)

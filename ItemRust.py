@@ -18,9 +18,8 @@ class ItemRust:
     def set_session(cls, session):
         cls.session = session
 
-    def __init__(self, name):
+    def __init__(self, name, quantity=1):
         self.name = name
-        self.quantity = 1
 
         self.all_success = False
 
@@ -34,6 +33,10 @@ class ItemRust:
         self.price_sp = None
         self.pricehistory_sp = None
         self.sales_histogram_sp = None
+
+        if quantity<0:
+            raise AttributeError("Quantity cannot be less than zero.")
+        self.quantity = quantity
 
     async def _get_json_async(self, url, params=None, headers=None, cookies=None, attempts=1, delay_ms=1000):
         """ Makes GET request and parses it to json. Wrapper for error handling and multiple attempts"""
@@ -271,10 +274,13 @@ class ItemRust:
 
         return result
 
-    def calc_liqval(self, MIN_LIQVAL_VALUE = 0.01):
+    def calc_liqval(self, quantity = None, MIN_LIQVAL_VALUE = 0.01):
         """ Calculate liquidity value factor.
         Function made via graphic func creator (Desmos) to represent subjective liquidity value of an item
-        based on it's """
+        based on it's.
+        If quantity is set to None, defaults to self.quantity"""
+        if quantity is None:
+            quantity = self.quantity
         sales_ex = self.calc_sales_extrapolated_sm(days_back=30)
         if sales_ex is None:
             return None
@@ -299,7 +305,7 @@ class ItemRust:
             return 1 * ((a - 0.1) * m) ** (1 / n) + 1
 
         x = sold_per_day / 10.0  # Formula detail
-        a = self.quantity / 10.0  # Formula detail
+        a = quantity / 10.0  # Formula detail
 
         #if x <= MIN_SOLRPERDAY_VALUE:
         #    func_evaluated = f1(MIN_SOLRPERDAY_VALUE)
@@ -316,21 +322,23 @@ class ItemRust:
             result = MIN_LIQVAL_VALUE
         return result
 
-    def calc_value(self, price_shop=None):
+    def calc_value(self, price_shop=None, quantity=None):
         """ Calculate combined value of an item. If price_shop is not None, returns
         value of an item modified by exchange factor.
         price_shop - [optional] price in shop in USD (i.e. 12.44)
-        """
+        quantity - if quantity of items is set to None, defaults to self.quantity"""
+        if quantity is None:
+            quantity = self.quantity
         price_sm = self.price_sm / 100
         if price_shop is None:
             # We don't include price_rch in calculations
             EF = 1
-        elif not (isinstance(price_shop, (int, float)) and price_shop > 0):
-            raise AttributeError("price_rch has to be number greater than 0")
-        else:
+        elif (isinstance(price_shop, (int, float)) and price_shop > 0):
             EF = (price_sm / price_shop) ** 2  # Exchange factor
+        else:
+            raise AttributeError("price_rch has to be number greater than 0")
 
-        liqval = self.calc_liqval()
+        liqval = self.calc_liqval(quantity=quantity)
 
         return round(EF * liqval * price_sm ** (1 / 2), 2)
 
