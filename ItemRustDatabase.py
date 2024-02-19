@@ -6,8 +6,11 @@ class ItemRustDatabase:
     def add(self, name, data):
         self.items.update(self.make_item(name, data))
 
+    def has_actual_record(self, name):
+        pass
+
     def load(self):
         pass
 
-    def update(self):
+    def update(self,itemrust):
         pass

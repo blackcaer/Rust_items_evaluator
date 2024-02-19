@@ -42,40 +42,19 @@ class ItemRust:
             raise AttributeError("Quantity cannot be less than zero.")
         self.quantity = quantity
 
-    async def _get_json_async(self, url, params=None, headers=None, cookies=None, attempts=1, delay_ms=1000):
-        """ Makes GET request and parses it to json. Wrapper for error handling and multiple attempts"""
-        # TODO: handle errors
-        if params is None: params = {}
-        if headers is None: headers = {}
-        if cookies is None: cookies = {}
-        errors = []
-
-        for attempt in range(attempts):
-            if attempt > 0:
-                await asyncio.sleep(delay_ms / 1000)
-
-            response = await self.session.get(url,
-                                              params=params,
-                                              headers={**self.DEFAULT_HEADERS, **headers},
-                                              cookies={**cookies})
-            if response.status == 200:
-                json_result = json.loads(await response.text())
-                return Result(json_result)
-            elif response.status == 404:
-                error = f"404: {response.reason}"
-                errors.append(error)
-                return Result(success=False, errors=errors)
-
-            error = (f"Status code is not 200, status_code={response.status}, reason={response.reason}, "
-                     f"attempt {attempt + 1}/{attempts}")
-            errors.append(error)
-
-        errors.append("Attempt limit reached")
-        return Result(success=False, errors=errors)
-
     async def update_async(self):
         """ Update item data """
         print(self.name + " updating...")
+
+        if self.database is None:
+            raise RuntimeError("Database is not set")
+
+        has_actual_record = self.database.has_actual_record(self.name)
+        if has_actual_record:
+            # Take data from db
+            pass
+
+
         phsm = await self.get_pricehistory_sm_async(100)  # TODO zmienic gdy zrobie baze danych
         iteminfo = await self.get_item_info_async()  # TODO run concurrently
         # shsm = await self.get_sale_offers_sm_async()
@@ -111,8 +90,12 @@ class ItemRust:
             print(self.name + "updated with status \nSUCCESS")
         else:
             self.all_success = False
-
             print(self.name + "updated with status \nFAILURE")
+
+        # TODO:
+        if not has_actual_record and self.all_success:
+            self.database.update(self)
+
         print()
 
     def market_price(self, market_type="SteamCommunityMarket"):
@@ -127,45 +110,10 @@ class ItemRust:
 
         # deprecated, use async version
 
-    def update(self):
-        """ Update item data """
-        print(self.name + " updating...")
-        phsm = self.get_pricehistory_sm(100)  # TODO zmienic gdy zrobie baze danych
-        shsm = self.get_sale_offers_sm()
-
-        if phsm.success:
-            self.pricehistory_sm = phsm.data
-            print("Price history success")
-            self._calc_default_sales_per_time()
-
-        else:
-            print("Price history errors: " + str(phsm.errors))
-
-        if shsm.success:
-            self.sale_offers_sm = shsm.data
-            print("Sales histogram success")
-        else:
-            print("Sales histogram success")
-            print("Sales histogram errors: " + str(shsm.errors))
-
-        if shsm.success:
-            self.price_sm = self.sale_offers_sm["items"][0]['price']
-
-        print(self.name + "updated with status")
-        if phsm.success and shsm.success:
-            self.all_success = True
-            print("SUCCESS")
-        else:
-            self.all_success = False
-
-            print("FAILURE")
-        print()
-
     async def get_item_info_async(self):
         result = await self._get_json_async(self.API_ITEM_URL + self.name,
                                             params={},
                                             headers={})
-
         return result
 
     async def get_pricehistory_sm_async(self, max_days):
@@ -192,31 +140,6 @@ class ItemRust:
 
         return result
 
-    def get_pricehistory_sm(self, max_days):
-        """ GET steammarket pricehistory.
-        Returns Result object with price history.
-        max_days - The maximum number of days worth of sales history to return.
-        Use -1 for all sales history.
-        result.data:
-
-        "date": datetime object,
-        "median": 0.0,
-        "high": 0,
-        "low": 0,
-        "open": 0,
-        "close": 0,
-        "volume": 0
-        """
-        result = self._get_json(self.API_ITEM_URL + self.name + "/sales",
-                                params={"maxDays": max_days},
-                                headers={}
-                                )
-        if result.success:
-            for r in result.data:
-                r['date'] = self._parse_date(r['date'])
-
-        return result
-
     async def get_sale_offers_sm_async(self, count=100, start=0):
         """ GET steammarket sales histogram
         Returns Result object with sales histogram
@@ -224,18 +147,6 @@ class ItemRust:
         result = await self._get_json_async(self.API_ITEM_URL + self.name + "/sellOrders",
                                             params={"start": start, "count": count},
                                             headers={})
-        return result
-
-    def get_sale_offers_sm(self, count=100, start=0):
-        """ GET steammarket sales histogram
-        Returns Result object with price history.
-        """
-        result = self._get_json(self.API_ITEM_URL + self.name + "/sellOrders",
-                                params={"start": start, "count": count},
-                                headers={}
-                                )
-        # if result.success:
-        #    self.sale_offers_sm = result.data
         return result
 
     def calc_real_sales_sm(self, days_back=30):
@@ -331,7 +242,7 @@ class ItemRust:
         value of an item modified by exchange factor.
         price_shop - [optional] price in shop in USD (i.e. 12.44)
         quantity - if quantity of items is set to None, defaults to self.quantity"""
-        if quantity is None:
+        if quantity is not None:
             quantity = self.quantity
         price_sm = self.price_sm / 100
         if price_shop is None:
@@ -346,6 +257,39 @@ class ItemRust:
 
         return round(EF * liqval * price_sm ** (1 / 2), 2)
 
+    # ========== Helper methods:
+
+    async def _get_json_async(self, url, params=None, headers=None, cookies=None, attempts=1, delay_ms=1000):
+        """ Makes GET request and parses it to json. Wrapper for error handling and multiple attempts"""
+        # TODO: handle errors
+        if params is None: params = {}
+        if headers is None: headers = {}
+        if cookies is None: cookies = {}
+        errors = []
+
+        for attempt in range(attempts):
+            if attempt > 0:
+                await asyncio.sleep(delay_ms / 1000)
+
+            response = await self.session.get(url,
+                                              params=params,
+                                              headers={**self.DEFAULT_HEADERS, **headers},
+                                              cookies={**cookies})
+            if response.status == 200:
+                json_result = json.loads(await response.text())
+                return Result(json_result)
+            elif response.status == 404:
+                error = f"404: {response.reason}"
+                errors.append(error)
+                return Result(success=False, errors=errors)
+
+            error = (f"Status code is not 200, status_code={response.status}, reason={response.reason}, "
+                     f"attempt {attempt + 1}/{attempts}")
+            errors.append(error)
+
+        errors.append("Attempt limit reached")
+        return Result(success=False, errors=errors)
+
     def _calc_default_sales_per_time(self):
         results = {}
 
@@ -355,6 +299,36 @@ class ItemRust:
         self.sales_sm = results
         return results
 
+    def _today_frac(self):
+        # Fraction of today, matters with low values of days_back
+        return round(dt.now().hour / 24, 2)
+
+    def _parse_date(self, strdate):
+        return dt.strptime(strdate, "%Y-%m-%dT%H:%M:%S")
+
+    # ================================================= na kiedys:
+
+    def get_price_sm(self):
+        """ Current price sm (TODO'real price'?)"""
+        pass
+
+    def get_offers_sm(self):
+        """ Nicely parsed get_sales_histogram?"""
+        pass
+
+    def get_price_sp(self):
+        """ Current price sp ('real price'?)"""
+        pass
+
+    def get_pricehistory_sp(self):
+        """  """
+        pass
+
+    def get_offers_sp(self):
+        pass
+
+
+    # obsolete sync:
     def _get_json(self, url, params=None, headers=None, attempts=1, delay_ms=1000):
         """ Makes GET request and parses it to json. Wrapper for error handling and multiple attempts"""
         # TODO: handle errors
@@ -384,30 +358,73 @@ class ItemRust:
         errors.append("Attempt limit reached")
         return Result(success=False, errors=errors)
 
-    def _today_frac(self):
-        # Fraction of today, matters with low values of days_back
-        return round(dt.now().hour / 24, 2)
+    def update(self):
+        """ Update item data """
+        print(self.name + " updating...")
+        phsm = self.get_pricehistory_sm(100)  # TODO zmienic gdy zrobie baze danych
+        shsm = self.get_sale_offers_sm()
 
-    def _parse_date(self, strdate):
-        return dt.strptime(strdate, "%Y-%m-%dT%H:%M:%S")
+        if phsm.success:
+            self.pricehistory_sm = phsm.data
+            print("Price history success")
+            self._calc_default_sales_per_time()
 
-    # ================================================= na kiedys:
+        else:
+            print("Price history errors: " + str(phsm.errors))
 
-    def get_price_sm(self):
-        """ Current price sm (TODO'real price'?)"""
-        pass
+        if shsm.success:
+            self.sale_offers_sm = shsm.data
+            print("Sales histogram success")
+        else:
+            print("Sales histogram success")
+            print("Sales histogram errors: " + str(shsm.errors))
 
-    def get_offers_sm(self):
-        """ Nicely parsed get_sales_histogram?"""
-        pass
+        if shsm.success:
+            self.price_sm = self.sale_offers_sm["items"][0]['price']
 
-    def get_price_sp(self):
-        """ Current price sp ('real price'?)"""
-        pass
+        print(self.name + "updated with status")
+        if phsm.success and shsm.success:
+            self.all_success = True
+            print("SUCCESS")
+        else:
+            self.all_success = False
 
-    def get_pricehistory_sp(self):
-        """  """
-        pass
+            print("FAILURE")
+        print()
 
-    def get_offers_sp(self):
-        pass
+    def get_pricehistory_sm(self, max_days):
+        """ GET steammarket pricehistory.
+        Returns Result object with price history.
+        max_days - The maximum number of days worth of sales history to return.
+        Use -1 for all sales history.
+        result.data:
+
+        "date": datetime object,
+        "median": 0.0,
+        "high": 0,
+        "low": 0,
+        "open": 0,
+        "close": 0,
+        "volume": 0
+        """
+        result = self._get_json(self.API_ITEM_URL + self.name + "/sales",
+                                params={"maxDays": max_days},
+                                headers={}
+                                )
+        if result.success:
+            for r in result.data:
+                r['date'] = self._parse_date(r['date'])
+
+        return result
+
+    def get_sale_offers_sm(self, count=100, start=0):
+        """ GET steammarket sales histogram
+        Returns Result object with price history.
+        """
+        result = self._get_json(self.API_ITEM_URL + self.name + "/sellOrders",
+                                params={"start": start, "count": count},
+                                headers={}
+                                )
+        # if result.success:
+        #    self.sale_offers_sm = result.data
+        return result
