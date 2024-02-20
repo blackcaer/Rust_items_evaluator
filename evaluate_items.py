@@ -78,7 +78,7 @@ def get_input():
 async def main():
     # try:
     ITEMDB = ItemRustDatabase()
-    ITEMDB.load()
+    ITEMDB.load_database()
     async with aiohttp.ClientSession() as session:
         ItemRust.set_session(session)
         ItemRust.set_database(ITEMDB)
