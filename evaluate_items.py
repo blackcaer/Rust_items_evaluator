@@ -1,5 +1,6 @@
 import asyncio
 import aiohttp
+import traceback
 from prettytable import PrettyTable
 from ItemRust import ItemRust
 from collections import Counter
@@ -99,7 +100,7 @@ async def main():
                 await task
 
             table = PrettyTable(reversesort=True)
-            table.field_names = ["name", "price_sm", "per_day", "liq_val", "value","value4one", "sp/sm", "% sp/sm"]
+            table.field_names = ["name", "price_sm", "per_day (extr)", "liq_val", "value","value4one", "sp/sm", "% sp/sm"]
             rows = []
             avgdata = {"prices": [], "values": []}  # data for weighted average
 
@@ -117,7 +118,7 @@ async def main():
 
                     rows.append([str(curr_item.quantity) + " " + name,
                                  price_sm,
-                                 round(perday, 2),
+                                 round(perday, 1),
                                  round(liqval, 2),
                                  value,
                                  value4one,
@@ -153,10 +154,9 @@ async def main():
             print()
 
     """except Exception as e:
-        print("Wywaliło ci program: ",type(e)," ", e)
-        print("args ", e.args)
-        print("__cause__ ", e.__cause__)
-        input("")"""
+        print("Unexpected error: ", str(e.args[0]), " ", e.__cause__)
+        traceback.print_exc()
+        input(" ")"""
 
 
 if __name__ == "__main__":

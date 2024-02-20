@@ -32,7 +32,6 @@ class ItemRust:
         self.price_sm = None  # lowest offer
         self.pricehistory_sm = None
         self.sale_offers_sm = None
-        self.sales_sm = None
 
         self.price_sp = None
         self.pricehistory_sp = None
@@ -52,8 +51,9 @@ class ItemRust:
         has_actual_record = self.database.has_actual_record(self.name)
         if has_actual_record:
             # Take data from db
-            pass
+            self.database.get_data(self)
 
+            return
 
         phsm = await self.get_pricehistory_sm_async(100)  # TODO zmienic gdy zrobie baze danych
         iteminfo = await self.get_item_info_async()  # TODO run concurrently
@@ -62,7 +62,6 @@ class ItemRust:
         if phsm.success:
             self.pricehistory_sm = phsm.data
             print(f"Price history success ({self.name})")
-            self._calc_default_sales_per_time()
         else:
             print(f"Price history errors ({self.name}): " + str(phsm.errors))
 
@@ -92,9 +91,8 @@ class ItemRust:
             self.all_success = False
             print(self.name + "updated with status \nFAILURE")
 
-        # TODO:
         if not has_actual_record and self.all_success:
-            self.database.update(self)
+            self.database.update_record(self)
 
         print()
 
@@ -290,15 +288,6 @@ class ItemRust:
         errors.append("Attempt limit reached")
         return Result(success=False, errors=errors)
 
-    def _calc_default_sales_per_time(self):
-        results = {}
-
-        for days in [1, 3, 7, 30, 90]:
-            results[str(days)] = self.calc_real_sales_sm(days)
-
-        self.sales_sm = results
-        return results
-
     def _today_frac(self):
         # Fraction of today, matters with low values of days_back
         return round(dt.now().hour / 24, 2)
@@ -367,7 +356,6 @@ class ItemRust:
         if phsm.success:
             self.pricehistory_sm = phsm.data
             print("Price history success")
-            self._calc_default_sales_per_time()
 
         else:
             print("Price history errors: " + str(phsm.errors))

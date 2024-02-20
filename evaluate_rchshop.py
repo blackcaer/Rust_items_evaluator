@@ -37,14 +37,15 @@ def show_table_rchshop(values):
 
     table = PrettyTable(reversesort=True)
     table.field_names = ["name", "quantity", "% sm/rch", "shop price",
-                         "steam price", "sold/day", "liq_val", "value", "sp/sm", "% sp/sm"]
+                         "steam price", "perday (extr)", "liq_val", "value", "sp/sm", "% sp/sm"]
 
     for record in values:
         itemrust = record["data"]
         price_sm = record["data"].price_sm / 100
         price_rch = record["rch_price"]
         liqval = round(record["liqval"], 2)
-        perday = round(record["data"].sales_sm["30"]["volume"] / 30, 0)
+        perday = round(itemrust.calc_sales_extrapolated_sm(30)[
+                                 "volume"] / 30,1) #round(record["data"].sales_sm["30"]["volume"] / 30, 0)
         # EF = round((price_sm / price_rch)**2,2)
 
         value = itemrust.calc_value(price_rch)  # round(EF*liqval*price_sm ** (1 / 2),2)
