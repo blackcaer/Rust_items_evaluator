@@ -89,7 +89,7 @@ class ItemRust:
 
         if phsm.success and iteminfo.success:  # and shsm.success
             self.all_success = True
-            self.timestamp = time.time()
+            self.timestamp = dt.now()
             print(self.name + " updated with status \nSUCCESS")
         else:
             self.all_success = False
