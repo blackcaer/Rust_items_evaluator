@@ -1,9 +1,12 @@
+from datetime import datetime, timedelta
+
 import jsonpickle
 import json
 import os
 from ItemRustDatabaseRecord import ItemRustDatabaseRecord
-class ItemRustDatabase:
 
+
+class ItemRustDatabase:
     def __init__(self, filename="rustItemDatabase.txt"):
         self.filename = filename
         self.records: dict[str, ItemRustDatabaseRecord] = {}
@@ -26,6 +29,7 @@ class ItemRustDatabase:
 
     def update_record(self, itemrust):
         """ Replace previous record with new one or create new record"""
+        print("Updating db for "+itemrust.name)
         self.records[itemrust.name] = ItemRustDatabaseRecord(itemrust)
 
     def delete_record(self, name):
@@ -34,19 +38,27 @@ class ItemRustDatabase:
 
     def has_actual_record(self, name):
         """ If the item in the database and has not expired"""
-        return name in self.records and not self._is_record_expired(name)
+        x = bool(name in self.records and not self._is_record_expired(name))
+        print(""+name+" actual: "+str(x))
+        return x
 
     def _is_record_expired(self, name):
         """ Is record with given name expired.
         Raises AttributeError if name is not in database."""
+
         if name not in self.records:
             raise AttributeError("Key '"+name+"' is not in database")
         # TODO implement
+        x = bool(self.records[name].timestamp < (datetime.now() - timedelta(minutes=4)))
+        print("" + name + " isexpired: " + str(x))
+        if x:
+            return True
         return False
 
     def assign_data_to(self, itemrust):
         """ Assigns data from database to itemrust.
         Raises AttributeError if itemrust is not in database"""
+        print("assign data to "+itemrust.name)
         if itemrust.name not in self.records:
             raise AttributeError("Key '" + itemrust.name + "' is not in database")
         self.records[itemrust.name].assign_data_to(itemrust)
