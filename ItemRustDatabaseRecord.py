@@ -32,4 +32,18 @@ class ItemRustDatabaseRecord:
         self.pricehistory_sp = itemrust.pricehistory_sp
         self.sales_histogram_sp = itemrust.sales_histogram_sp
 
-        self.timestamp = time.time()
+        self.timestamp = itemrust.timestamp
+
+    def assign_data_to(self, itemrust):
+        itemrust.name = self.name
+        itemrust.iteminfo = self.iteminfo
+
+        itemrust.price_sm = self.price_sm
+        itemrust.pricehistory_sm = self.pricehistory_sm
+        itemrust.sale_offers_sm = self.sale_offers_sm
+
+        itemrust.price_sp = self.price_sp
+        itemrust.pricehistory_sp = self.pricehistory_sp
+        itemrust.sales_histogram_sp = self.sales_histogram_sp
+
+        itemrust.timestamp = self.timestamp
