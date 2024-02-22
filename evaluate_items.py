@@ -81,7 +81,7 @@ async def main():
     try:
         ITEMDB = ItemRustDatabase(ITEMDB_FILE)
         ITEMDB.load_database()
-        async with aiohttp.ClientSession() as session:
+        async with (aiohttp.ClientSession() as session):
             ItemRust.set_session(session)
             ItemRust.set_database(ITEMDB)
 
@@ -118,14 +118,21 @@ async def main():
                         value = curr_item.calc_value(None)
                         value4one = curr_item.calc_value(quantity=1)
 
+                        price_sp=curr_item.price_sp
+                        if price_sp is not None:
+                            spsm=round((price_sp / 100) / price_sm, 2)
+                            percentspsm=str(round((price_sp / 100) / price_sm * 100 - 100))
+                        else:
+                            spsm, percentspsm = "None","None"
+
                         rows.append([str(curr_item.quantity) + " " + name,
                                      price_sm,
                                      round(perday, 1),
                                      round(liqval, 2),
                                      value,
                                      value4one,
-                                     round((curr_item.price_sp / 100) / price_sm, 2),
-                                     str(round((curr_item.price_sp / 100) / price_sm * 100 - 100)) + "%"
+                                     spsm,
+                                     percentspsm + "%"
                                      ])
                         for _ in range(curr_item.quantity):
                             avgdata["prices"].append(price_sm)
@@ -155,7 +162,7 @@ async def main():
                 print()
                 print()
     finally:
-        if ItemRust.database is not None:
+        if ItemRust.database is not None and not ItemRust.database.is_empty():
             print("Saving database")
             ItemRust.database.save_database()
     """except Exception as e:

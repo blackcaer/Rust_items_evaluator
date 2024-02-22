@@ -1,9 +1,9 @@
 import asyncio
 import json
-import time
-from datetime import datetime as dt, timedelta
 
-import requests as req
+from datetime import datetime as dt, timedelta
+from ItemRustDatabase import ItemRustDatabase
+import aiohttp
 
 from Result import Result
 
@@ -14,16 +14,19 @@ class ItemRust:
     # application/json text/plain
     DEFAULT_HEADERS = {"accept": "application/json", "language": "English", "currency": "USD"}
 
+    session: aiohttp.ClientSession = None
+    database: ItemRustDatabase = None
     @classmethod
     def set_session(cls, session):
         cls.session = session
 
     @classmethod
     def set_database(cls, database):
-        cls.database = database
+        cls.database : ItemRustDatabase = database
 
     def __init__(self, name, quantity=1):
         self.name = name
+        self.hash_name = None
 
         self.all_success = False
 
@@ -84,6 +87,14 @@ class ItemRust:
             print(f"Item info success ({self.name})")
             self.price_sm = self.market_price("SteamCommunityMarket")
             self.price_sp = self.market_price("Skinport")
+            if self.price_sm is None and phsm.success:
+                # If there's no SteamCommunityMarket in iteminfo, happens sometimes
+                self.price_sm = phsm.data[len(phsm.data)-1]["median"]*100   # Converting to standard format
+                print(self.name+" no SteamCommunityMarket in iteminfo, assuming price_sm from price history")
+
+            # Name with proper case
+            self.hash_name = self.iteminfo["nameHash"].strip()
+
         else:
             print(f"Item info errors ({self.name}): " + str(iteminfo.errors))
 
@@ -103,11 +114,14 @@ class ItemRust:
     def market_price(self, market_type="SteamCommunityMarket"):
         """ Returns market price from market_type using SCMM API.
         Uses format 1234 (1234 == 12.34 USD)
+        Return None if specified market_type is not found
         """
         if self.iteminfo is None:
             return None
-        price = next(item["price"] for item in self.iteminfo["buyPrices"] if item["marketType"] == market_type)
-
+        try:
+            price = next(item["price"] for item in self.iteminfo["buyPrices"] if item["marketType"] == market_type)
+        except StopIteration:
+            return None
         return price
 
         # deprecated, use async version
@@ -123,8 +137,8 @@ class ItemRust:
         Returns Result object with price history.
         max_days - The maximum number of days worth of sales history to return.
         Use -1 for all sales history.
-        result.data:
-
+        result.data: list[dict()]
+        dict keys:
         "date": datetime object,
         "median": 0.0,
         "high": 0,

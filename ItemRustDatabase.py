@@ -10,6 +10,9 @@ class ItemRustDatabase:
         self.filename = filename
         self.records: dict[str, ItemRustDatabaseRecord] = {}
 
+    def is_empty(self):
+        return len(self.records)==0
+
     def load_database(self):
         """ Load self.records from file"""
         if os.path.exists(self.filename):

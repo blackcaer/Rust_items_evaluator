@@ -51,6 +51,12 @@ def show_table_rchshop(values):
         # TODO filtering (do it right xd)
         # if price_sm<0.7 or perday<14:# or (price_sm<12 and liqval<1):
         #    continue
+        price_sp = itemrust.price_sp
+        if price_sp is not None:
+            spsm = round((price_sp / 100) / price_sm, 2)
+            percentspsm = str(round((price_sp / 100) / price_sm * 100 - 100))
+        else:
+            spsm, percentspsm = "None", "None"
 
         rows.append([record["name"],
                      record["quantity"],
@@ -60,8 +66,8 @@ def show_table_rchshop(values):
                      perday,
                      liqval,
                      value,
-                     round((itemrust.price_sp / 100) / price_sm, 2),
-                     str(round((itemrust.price_sp / 100) / price_sm * 100 - 100)) + "%"
+                     spsm,
+                     percentspsm + "%"
                      ])
 
     for row in rows:
