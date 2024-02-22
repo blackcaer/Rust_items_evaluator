@@ -6,12 +6,10 @@ import jsonpickle
 from prettytable import PrettyTable
 from ItemRust import ItemRust
 from ItemRustDatabase import ItemRustDatabase
+import time
+ITEMDB_FILE = "rustItemDatabase.txt"
 
 
-# start_time = time.time()
-# end_time = time.time()
-# execution_time = end_time - start_time
-# print(name, " took ", round(execution_time, 3), " sec")
 
 async def fetch_and_calc(name):
     itemrust = ItemRust(name)
@@ -81,17 +79,20 @@ def show_table_rchshop(values):
     print(table)
 
 
-async def rch_shop_all():
-    TEST = 1
+async def rch_shop_all(ITEMDB):
+    TEST = 0
     SAVE_FOR_TEST = 0  # Saves data if TEST is False
     shop = rch_shop_to_tab()
-
     item_fetch_tasks = set()
     values = []
 
     async with aiohttp.ClientSession() as session:
         ItemRust.set_session(session)
+        ItemRust.set_database(ITEMDB)
         obj_to_save = list()
+
+        start_time = time.time()
+
 
         if TEST:
             with open('src/tmp_shop_data.json', 'r') as file:
@@ -129,6 +130,10 @@ async def rch_shop_all():
                 json_data = jsonpickle.encode(obj_to_save)
                 f.write(json_data)
 
+        end_time = time.time()
+        execution_time = end_time - start_time
+        print("Updating items took ", round(execution_time, 3), " sec")
+
         show_table_rchshop(values)
 
         input("")
@@ -136,15 +141,19 @@ async def rch_shop_all():
 
 async def main():
     try:
-        global database
-        database = ItemRustDatabase()
+        ITEMDB = ItemRustDatabase(ITEMDB_FILE)
+        ITEMDB.load_database()
 
-        await rch_shop_all()
+        await rch_shop_all(ITEMDB)
 
     except Exception as e:
         print("Unexpected error: ", str(e.args[0]), " ", e.__cause__)
         traceback.print_exc()
         input(" ")
+    finally:
+        if ItemRust.database is not None:
+            print("Saving database")
+            ItemRust.database.save_database()
 
 
 if __name__ == "__main__":

@@ -1,13 +1,12 @@
 from datetime import datetime, timedelta
 
 import jsonpickle
-import json
 import os
 from ItemRustDatabaseRecord import ItemRustDatabaseRecord
 
 
 class ItemRustDatabase:
-    def __init__(self, filename="rustItemDatabase.txt"):
+    def __init__(self, filename):
         self.filename = filename
         self.records: dict[str, ItemRustDatabaseRecord] = {}
 
@@ -38,9 +37,9 @@ class ItemRustDatabase:
 
     def has_actual_record(self, name):
         """ If the item in the database and has not expired"""
-        x = bool(name in self.records and not self._is_record_expired(name))
-        print(""+name+" actual: "+str(x))
-        return x
+        has_actual_record = bool(name in self.records and not self._is_record_expired(name))
+        print(name +" has_actual_record: " + str(has_actual_record))
+        return has_actual_record
 
     def _is_record_expired(self, name):
         """ Is record with given name expired.
@@ -49,9 +48,9 @@ class ItemRustDatabase:
         if name not in self.records:
             raise AttributeError("Key '"+name+"' is not in database")
         # TODO implement
-        x = bool(self.records[name].timestamp < (datetime.now() - timedelta(minutes=4)))
-        print("" + name + " isexpired: " + str(x))
-        if x:
+        is_record_expired = bool(self.records[name].timestamp < (datetime.now() - timedelta(hours=22)))
+        print("" + name + " isexpired: " + str(is_record_expired))
+        if is_record_expired:
             return True
         return False
 

@@ -6,6 +6,8 @@ from ItemRust import ItemRust
 from collections import Counter
 from ItemRustDatabase import ItemRustDatabase
 
+ITEMDB_FILE = "rustItemDatabase.txt"
+
 def weighted_average(data, weights):
     if len(data) != len(weights):
         raise ValueError("Length of data and weights must be the same.")
@@ -77,7 +79,7 @@ def get_input():
 
 async def main():
     try:
-        ITEMDB = ItemRustDatabase()
+        ITEMDB = ItemRustDatabase(ITEMDB_FILE)
         ITEMDB.load_database()
         async with aiohttp.ClientSession() as session:
             ItemRust.set_session(session)
