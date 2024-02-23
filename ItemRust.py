@@ -41,6 +41,7 @@ class ItemRust:
         self.sales_histogram_sp = None
 
         self.timestamp = None   # Timestamp of last all_success update
+        self.fromDB = False
 
         if quantity<0:
             raise AttributeError("Quantity cannot be less than zero.")
@@ -57,9 +58,12 @@ class ItemRust:
         if has_actual_record:
             # Take data from db
             print("Reading data from DB for "+self.name)
+            self.fromDB = True
             self.database.assign_data_to(self)
             self.all_success = True
             return
+        else:
+            self.fromDB = False
 
         phsm = await self.get_pricehistory_sm_async(100)  # TODO zmienic gdy zrobie baze danych
         iteminfo = await self.get_item_info_async()  # TODO run concurrently

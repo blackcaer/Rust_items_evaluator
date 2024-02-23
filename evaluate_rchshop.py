@@ -35,8 +35,9 @@ def show_table_rchshop(values):
 
     table = PrettyTable(reversesort=True)
     table.field_names = ["name", "quantity", "% sm/rch", "shop price",
-                         "steam price", "perday (extr)", "liq_val", "value", "sp/sm", "% sp/sm"]
+                         "steam price", "perday (extr)", "liq_val", "value","valNoEF", "sp/sm", "% sp/sm"]
 
+    fromDB=0
     for record in values:
         itemrust = record["data"]
         price_sm = record["data"].price_sm / 100
@@ -47,6 +48,7 @@ def show_table_rchshop(values):
         # EF = round((price_sm / price_rch)**2,2)
 
         value = itemrust.calc_value(price_rch)  # round(EF*liqval*price_sm ** (1 / 2),2)
+        value_no_EF = itemrust.calc_value()
 
         # TODO filtering (do it right xd)
         # if price_sm<0.7 or perday<14:# or (price_sm<12 and liqval<1):
@@ -66,9 +68,12 @@ def show_table_rchshop(values):
                      perday,
                      liqval,
                      value,
-                     spsm,
-                     percentspsm + "%"
+                     value_no_EF,
+                     str(spsm),
+                     str(percentspsm) + "%"
                      ])
+        if itemrust.fromDB:
+            fromDB+=1
 
     for row in rows:
         table.add_row(row)
@@ -84,10 +89,12 @@ def show_table_rchshop(values):
     table.sortby = "value"
     print(table)
 
+    print(f"Total different items: {len(values)}, fromDB: {fromDB}")
+
 
 async def rch_shop_all(ITEMDB):
     TEST = 0
-    SAVE_FOR_TEST = 0  # Saves data if TEST is False
+    SAVE_FOR_TEST = 1  # Saves data if TEST is False
     shop = rch_shop_to_tab()
     item_fetch_tasks = set()
     values = []
