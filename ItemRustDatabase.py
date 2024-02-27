@@ -62,8 +62,11 @@ class ItemRustDatabase:
 
         if name not in self.records:
             raise AttributeError("Key '"+name+"' is not in database")
-        # TODO implement
-        is_record_expired = bool(self.records[name].timestamp < (datetime.now() - timedelta(hours=22)))
+        record = self.records[name]
+
+        is_record_expired = bool(record.calc_expiry_date() < datetime.now())
+
+        #is_record_expired = bool(self.records[name].timestamp < (datetime.now() - timedelta(hours=22)))
         print("" + name + " isexpired: " + str(is_record_expired))
         if is_record_expired:
             return True
