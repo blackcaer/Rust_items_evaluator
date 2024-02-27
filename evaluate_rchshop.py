@@ -7,6 +7,8 @@ from prettytable import PrettyTable
 from ItemRust import ItemRust
 from ItemRustDatabase import ItemRustDatabase
 import time
+from collections import Counter
+
 ITEMDB_FILE = "rustItemDatabase.txt"
 
 
@@ -27,6 +29,27 @@ def rch_shop_to_tab():
 
     return res
 
+def eq_to_tab():
+    with open('src/inventory.txt', 'r') as f:
+        res = json.load(f)
+
+    tmp = []
+    for r in res:
+        obj = {
+            "name": r["market_hash_name"],
+            "price": r["price"]/100,
+        }
+        if obj["price"]==0:
+            continue
+        tmp.append(obj)
+
+    tmp = [(entry["name"],entry["price"]) for entry in tmp]
+
+    result = [{"name": name,
+             "price": price,
+             "quantity": count} for (name, price), count in Counter(tmp).items()]
+
+    return result
 
 def show_table_rchshop(values):
     rows = []
@@ -89,15 +112,26 @@ def show_table_rchshop(values):
     table.sortby = "value"
     print(table)
 
+    #print("sort by valNoEF:")
+    #table.sortby = "valNoEF"
+    #print(table)
+
+
+
     print(f"Total different items: {len(values)}, fromDB: {fromDB}")
 
 
 async def rch_shop_all(ITEMDB):
     TEST = 0
-    SAVE_FOR_TEST = 1  # Saves data if TEST is False
+    SAVE_FOR_TEST = 0  # Saves data if TEST is False
+    EQ_MODE=1
     shop = rch_shop_to_tab()
+    if EQ_MODE:
+        shop=eq_to_tab()
+
     item_fetch_tasks = set()
-    values = []
+    rows = []
+
 
     async with aiohttp.ClientSession() as session:
         ItemRust.set_session(session)
@@ -131,7 +165,7 @@ async def rch_shop_all(ITEMDB):
             obj_to_save.append([tmp, rch_price, quantity])
             liqval = tmp[0]
             itemrust = tmp[1]
-            values.append({"name": itemrust.name,
+            rows.append({"name": itemrust.name,
                            "rch_price": rch_price,
                            "quantity": quantity,
                            "liqval": liqval,
@@ -147,7 +181,7 @@ async def rch_shop_all(ITEMDB):
         execution_time = end_time - start_time
         print("Updating items took ", round(execution_time, 3), " sec")
 
-        show_table_rchshop(values)
+        show_table_rchshop(rows)
 
         input("")
 
@@ -164,9 +198,7 @@ async def main():
         traceback.print_exc()
         input(" ")
     finally:
-        if ItemRust.database is not None:
-            print("Saving database")
-            ItemRust.database.save_database()
+        ItemRust.database.save_database()
 
 
 if __name__ == "__main__":
