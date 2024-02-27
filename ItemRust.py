@@ -268,7 +268,7 @@ class ItemRust:
         if price_shop is None:
             # We don't include price_rch in calculations
             EF = 1
-        elif (isinstance(price_shop, (int, float)) and price_shop > 0):
+        elif isinstance(price_shop, (int, float)) and price_shop > 0:
             EF = (price_sm / price_shop) ** 2  # Exchange factor
         else:
             raise AttributeError("price_rch has to be number greater than 0")

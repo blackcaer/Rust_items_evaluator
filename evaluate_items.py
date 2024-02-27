@@ -94,8 +94,7 @@ async def main():
                 for record in records:
                     itemrust = ItemRust(name=record["name"], quantity=record["quantity"])
                     items.append(itemrust)
-                    item_fetch_tasks.add(
-                        asyncio.create_task(itemrust.update_async()))
+                    item_fetch_tasks.add(asyncio.create_task(itemrust.update_async()))
 
                 # gather results, prepare values tab for displaying
                 for task in item_fetch_tasks:
@@ -161,14 +160,12 @@ async def main():
 
                 print()
                 print()
-    finally:
-        if ItemRust.database is not None and not ItemRust.database.is_empty():
-            print("Saving database")
-            ItemRust.database.save_database()
-    """except Exception as e:
+    except Exception as e:
         print("Unexpected error: ", str(e.args[0]), " ", e.__cause__)
         traceback.print_exc()
-        input(" ")"""
+        input(" ")
+    finally:
+        ItemRust.database.save_database()
 
 
 if __name__ == "__main__":
