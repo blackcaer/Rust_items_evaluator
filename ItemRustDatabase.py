@@ -24,10 +24,15 @@ class ItemRustDatabase:
 
     def save_database(self):
         """ Save self.records to file"""
-        with open(self.filename, 'w') as f:
-            # json.dump(obj_to_save, f)
-            json_data = jsonpickle.encode(self.records)
-            f.write(json_data)
+        if self.records is not None and not self.is_empty():
+            print("Saving database")
+            with open(self.filename, 'w') as f:
+                # json.dump(obj_to_save, f)
+                json_data = jsonpickle.encode(self.records)
+                f.write(json_data)
+        else:
+            print("Not saving database - empty")
+
 
     def update_record(self, itemrust):
         """ Replace previous record with new one or create new record"""
@@ -47,6 +52,13 @@ class ItemRustDatabase:
     def _is_record_expired(self, name):
         """ Is record with given name expired.
         Raises AttributeError if name is not in database."""
+        """def calc_expiry_date():
+            item = self.records[name]
+            timestamp = item.timestamp
+            now = datetime.now()
+            value = item.
+            pass
+"""
 
         if name not in self.records:
             raise AttributeError("Key '"+name+"' is not in database")
