@@ -39,7 +39,7 @@ def eq_to_tab():
             "name": r["market_hash_name"],
             "price": r["price"]/100,
         }
-        if obj["price"]==0:
+        if obj["price"] == 0:
             continue
         tmp.append(obj)
 
@@ -112,9 +112,9 @@ def show_table_rchshop(values):
     table.sortby = "value"
     print(table)
 
-    #print("sort by valNoEF:")
-    #table.sortby = "valNoEF"
-    #print(table)
+    print("sort by valNoEF:")
+    table.sortby = "valNoEF"
+    print(table)
 
 
 
