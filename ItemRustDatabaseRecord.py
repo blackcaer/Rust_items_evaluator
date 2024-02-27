@@ -15,9 +15,11 @@ class ItemRustDatabaseRecord:
         self.sales_histogram_sp = None
         self.timestamp = None
 
+        self.value = None
+
         self.save_data(itemrust)
 
-    def save_data(self,itemrust):
+    def save_data(self, itemrust):
         if not itemrust.all_success:
             raise RuntimeError("Itemrust all_success is false")
 
@@ -31,6 +33,8 @@ class ItemRustDatabaseRecord:
         self.price_sp = itemrust.price_sp
         self.pricehistory_sp = itemrust.pricehistory_sp
         self.sales_histogram_sp = itemrust.sales_histogram_sp
+
+        self.value = itemrust.calc_value()
 
         self.timestamp = itemrust.timestamp
 
