@@ -1,10 +1,10 @@
 import asyncio
 import json
-
 from datetime import datetime as dt, timedelta
-from ItemRustDatabase import ItemRustDatabase
+
 import aiohttp
 
+from ItemRustDatabase import ItemRustDatabase
 from Result import Result
 
 
@@ -16,13 +16,14 @@ class ItemRust:
 
     session: aiohttp.ClientSession = None
     database: ItemRustDatabase = None
+
     @classmethod
     def set_session(cls, session):
         cls.session = session
 
     @classmethod
     def set_database(cls, database):
-        cls.database : ItemRustDatabase = database
+        cls.database: ItemRustDatabase = database
 
     def __init__(self, name, quantity=1):
         self.name = name
@@ -40,17 +41,16 @@ class ItemRust:
         self.pricehistory_sp = None
         self.sales_histogram_sp = None
 
-        self.timestamp = None   # Timestamp of last all_success update
+        self.timestamp = None  # Timestamp of last all_success update
         self.fromDB = False
 
         self.perday = None
         self.value = None
-        self.value_single = None    # Value if quantity of an item is 1
+        self.value_single = None  # Value if quantity of an item is 1
         self.liqval = None
-        self.liqval_single = None   # Liqval if quantity of an item is 1
+        self.liqval_single = None  # Liqval if quantity of an item is 1
 
-
-        if quantity<0:
+        if quantity < 0:
             raise AttributeError("Quantity cannot be less than zero.")
         self.quantity = quantity
 
@@ -64,7 +64,7 @@ class ItemRust:
         has_actual_record = self.database.has_actual_record(self.name)
         if has_actual_record:
             # Take data from db
-            print("Reading data from DB for "+self.name)
+            print("Reading data from DB for " + self.name)
             self.fromDB = True
             self.database.assign_data_to(self)
             self.all_success = True
@@ -78,9 +78,9 @@ class ItemRust:
 
         if phsm.success:
             self.pricehistory_sm = phsm.data
-            self.perday = round(self.calc_sales_extrapolated_sm(30)["volume"] / 30,2)
+            self.perday = round(self.calc_sales_extrapolated_sm(30)["volume"] / 30, 2)
             self.value = self.calc_value(price_shop=None)
-            self.value_single = self.calc_value(price_shop=None,quantity=1)
+            self.value_single = self.calc_value(price_shop=None, quantity=1)
             self.liqval = self.calc_liqval()
             self.liqval_single = self.calc_liqval(quantity=1)
             print(f"Price history success ({self.name})")
@@ -105,8 +105,8 @@ class ItemRust:
             self.price_sp = self.market_price("Skinport")
             if self.price_sm is None and phsm.success:
                 # If there's no SteamCommunityMarket in iteminfo, happens sometimes
-                self.price_sm = phsm.data[len(phsm.data)-1]["median"]*100   # Converting to standard format
-                print(self.name+" no SteamCommunityMarket in iteminfo, assuming price_sm from price history")
+                self.price_sm = phsm.data[len(phsm.data) - 1]["median"] * 100  # Converting to standard format
+                print(self.name + " no SteamCommunityMarket in iteminfo, assuming price_sm from price history")
 
             # Name with proper case
             self.hash_name = self.iteminfo["nameHash"].strip()

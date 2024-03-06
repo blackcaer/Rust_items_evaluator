@@ -1,8 +1,10 @@
 from datetime import datetime, timedelta
 
+
 class ItemRustDatabaseRecord:
     """ Encapsulates data of ItemRust for ItemRustDatabase class"""
-    def __init__(self,itemrust):
+
+    def __init__(self, itemrust):
         self.name = None
         self.iteminfo = None
         self.price_sm = None
@@ -69,7 +71,7 @@ class ItemRustDatabaseRecord:
         """
         if high_value < low_value:
             raise ValueError("low_value cannot be greater than high_value")
-        if max_expiry_time<min_expiry_time:
+        if max_expiry_time < min_expiry_time:
             raise ValueError("min_expiry_time cannot be greater than max_expiry_time")
 
         val = self.value
@@ -80,7 +82,7 @@ class ItemRustDatabaseRecord:
             expiry_time_days = min_expiry_time
         else:
             # Calculate expiry time days by scaling time proportionally to value between low and high value
-            mtp = (val-low_value) / (high_value - low_value)
+            mtp = (val - low_value) / (high_value - low_value)
             expiry_time_days = min_expiry_time + mtp * (max_expiry_time - min_expiry_time)
 
         expiry_date = self.timestamp + timedelta(days=expiry_time_days)
@@ -96,5 +98,3 @@ class ItemRustDatabaseRecord:
                 expiry_date = friday_expiration
 
         return expiry_date
-
-

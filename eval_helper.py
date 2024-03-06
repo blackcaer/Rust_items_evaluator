@@ -1,5 +1,6 @@
-from collections import Counter
 import json
+from collections import Counter
+
 
 def _handle_input(lines):
     # Handles formats:
@@ -34,13 +35,13 @@ def _handle_input(lines):
                 for name, count in Counter(lines).items()]
     else:
         names_prices = [extract_data(line) for line in lines]
-        names_prices = [(entry["name"],entry["price"]) for entry in names_prices]
+        names_prices = [(entry["name"], entry["price"]) for entry in names_prices]
 
         # Calculate quantity
         return [{"name": name,
                  "price": price,
                  "quantity": count}
-                for (name,price), count in Counter(names_prices).items()]
+                for (name, price), count in Counter(names_prices).items()]
 
 
 def get_input_console():
@@ -56,11 +57,13 @@ def get_input_console():
 
     return _handle_input(lines)
 
+
 def get_input_rchshop():
     with open('src/rchshop.txt', 'r') as f:
         res = json.load(f)
 
     return res
+
 
 def get_input_eq():
     with open('src/inventory.txt', 'r') as f:
@@ -70,16 +73,16 @@ def get_input_eq():
     for r in res["items"]:
         obj = {
             "name": r["market_hash_name"],
-            "price": r["price"]/100,
+            "price": r["price"] / 100,
         }
         if obj["price"] == 0:
             continue
         tmp.append(obj)
 
-    tmp = [(entry["name"],entry["price"]) for entry in tmp]
+    tmp = [(entry["name"], entry["price"]) for entry in tmp]
 
     result = [{"name": name,
-             "price": price,
-             "quantity": count} for (name, price), count in Counter(tmp).items()]
+               "price": price,
+               "quantity": count} for (name, price), count in Counter(tmp).items()]
 
     return result

@@ -1,19 +1,23 @@
 import asyncio
+from enum import Enum
+
 import aiohttp
-import jsonpickle
-from prettytable import PrettyTable
+
+import eval_helper as helper
 from ItemRust import ItemRust
 from ItemRustDatabase import ItemRustDatabase
-from enum import Enum
-import eval_helper as helper
+
+
 class Modes(Enum):
     EXIT = 0
     EVAL_ITEMS = 1
     EVAL_RCHSHOP = 2
     EVAL_EQ = 3
 
+
 ITEMDB_FILE = "rustItemDatabase.txt"
 MODE = 0
+
 
 def handle_choices():
     global MODE
@@ -43,15 +47,16 @@ def handle_choices():
 
             print()
 
+
 def get_input():
     # get input
     # format input
     data = None
-    if MODE==Modes.EVAL_ITEMS:
+    if MODE == Modes.EVAL_ITEMS:
         data = helper.get_input_console()
-    elif MODE==Modes.EVAL_RCHSHOP:
+    elif MODE == Modes.EVAL_RCHSHOP:
         data = helper.get_input_rchshop()
-    elif MODE==Modes.EVAL_EQ:
+    elif MODE == Modes.EVAL_EQ:
         data = helper.get_input_eq()
 
     return data
@@ -71,10 +76,10 @@ def display_items(items_data):
     pass
 
 
-
 async def main():
     # choose rchshop/rcheq/items/coinflips etc
     handle_choices()
+
 
 if __name__ == "__main__":
     asyncio.run(main())

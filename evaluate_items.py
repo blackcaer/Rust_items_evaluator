@@ -1,12 +1,15 @@
 import asyncio
-import aiohttp
 import traceback
-from prettytable import PrettyTable
-from ItemRust import ItemRust
 from collections import Counter
+
+import aiohttp
+from prettytable import PrettyTable
+
+from ItemRust import ItemRust
 from ItemRustDatabase import ItemRustDatabase
 
 ITEMDB_FILE = "rustItemDatabase.txt"
+
 
 def display_prototype(items):
     table = PrettyTable(reversesort=True)
@@ -18,7 +21,6 @@ def display_prototype(items):
     # prepare data for rows
     # filter / sort
     # display
-
 
     # prepare rows of prettytable
     for curr_item in items:
@@ -62,7 +64,6 @@ def display_prototype(items):
     print("Sorting by value")
     table.sortby = "value"
     print(table)
-
 
 
 def weighted_average(data, weights):
@@ -111,13 +112,13 @@ def handle_input(lines):
                 for name, count in Counter(lines).items()]
     else:
         names_prices = [extract_data(line) for line in lines]
-        names_prices = [(entry["name"],entry["price"]) for entry in names_prices]
+        names_prices = [(entry["name"], entry["price"]) for entry in names_prices]
 
         # Calculate quantity
         return [{"name": name,
                  "price": price,
                  "quantity": count}
-                for (name,price), count in Counter(names_prices).items()]
+                for (name, price), count in Counter(names_prices).items()]
 
 
 def get_input():
@@ -158,7 +159,8 @@ async def main():
                     await task
 
                 table = PrettyTable(reversesort=True)
-                table.field_names = ["name", "price_sm", "per_day (extr)", "liq_val", "value","value4one", "sp/sm", "% sp/sm"]
+                table.field_names = ["name", "price_sm", "per_day (extr)", "liq_val", "value", "value4one", "sp/sm",
+                                     "% sp/sm"]
                 rows = []
                 avgdata = {"prices": [], "values": []}  # data for weighted average
 
@@ -174,12 +176,12 @@ async def main():
                         value = curr_item.calc_value(None)
                         value4one = curr_item.calc_value(quantity=1)
 
-                        price_sp=curr_item.price_sp
+                        price_sp = curr_item.price_sp
                         if price_sp is not None:
-                            spsm=round((price_sp / 100) / price_sm, 2)
-                            percentspsm=str(round((price_sp / 100) / price_sm * 100 - 100))
+                            spsm = round((price_sp / 100) / price_sm, 2)
+                            percentspsm = str(round((price_sp / 100) / price_sm * 100 - 100))
                         else:
-                            spsm, percentspsm = "None","None"
+                            spsm, percentspsm = "None", "None"
 
                         rows.append([str(curr_item.quantity) + " " + name,
                                      price_sm,

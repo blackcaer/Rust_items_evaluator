@@ -1,16 +1,17 @@
 import asyncio
 import json
+import time
 import traceback
+from collections import Counter
+
 import aiohttp
 import jsonpickle
 from prettytable import PrettyTable
+
 from ItemRust import ItemRust
 from ItemRustDatabase import ItemRustDatabase
-import time
-from collections import Counter
 
 ITEMDB_FILE = "rustItemDatabase.txt"
-
 
 
 async def fetch_and_calc(name):
@@ -24,10 +25,11 @@ def rch_shop_to_tab():
         res = json.load(f)
 
     # TODO only for tests
-    #res = res[:5]
+    # res = res[:5]
     # res = [{"name": "Weapon Barrel", "price": 13.53, "quantity": 2}]
 
     return res
+
 
 def eq_to_tab():
     with open('src/inventory.txt', 'r') as f:
@@ -37,19 +39,20 @@ def eq_to_tab():
     for r in res["items"]:
         obj = {
             "name": r["market_hash_name"],
-            "price": r["price"]/100,
+            "price": r["price"] / 100,
         }
         if obj["price"] == 0:
             continue
         tmp.append(obj)
 
-    tmp = [(entry["name"],entry["price"]) for entry in tmp]
+    tmp = [(entry["name"], entry["price"]) for entry in tmp]
 
     result = [{"name": name,
-             "price": price,
-             "quantity": count} for (name, price), count in Counter(tmp).items()]
+               "price": price,
+               "quantity": count} for (name, price), count in Counter(tmp).items()]
 
     return result
+
 
 def show_table_rchshop(values):
     rows = []
@@ -58,16 +61,16 @@ def show_table_rchshop(values):
 
     table = PrettyTable(reversesort=True)
     table.field_names = ["name", "quantity", "% sm/rch", "shop price",
-                         "steam price", "perday (extr)", "liq_val", "value","valNoEF", "sp/sm", "% sp/sm"]
+                         "steam price", "perday (extr)", "liq_val", "value", "valNoEF", "sp/sm", "% sp/sm"]
 
-    fromDB=0
+    fromDB = 0
     for record in values:
         itemrust = record["data"]
         price_sm = record["data"].price_sm / 100
         price_rch = record["rch_price"]
         liqval = round(record["liqval"], 2)
         perday = round(itemrust.calc_sales_extrapolated_sm(30)[
-                                 "volume"] / 30,1) #round(record["data"].sales_sm["30"]["volume"] / 30, 0)
+                           "volume"] / 30, 1)  # round(record["data"].sales_sm["30"]["volume"] / 30, 0)
         # EF = round((price_sm / price_rch)**2,2)
 
         value = itemrust.calc_value(price_rch)  # round(EF*liqval*price_sm ** (1 / 2),2)
@@ -93,7 +96,7 @@ def show_table_rchshop(values):
                      str(percentspsm) + "%"
                      ])
         if itemrust.fromDB:
-            fromDB+=1
+            fromDB += 1
 
     for row in rows:
         table.add_row(row)
@@ -113,22 +116,19 @@ def show_table_rchshop(values):
     table.sortby = "valNoEF"
     print(table)
 
-
-
     print(f"Total different items: {len(values)}, fromDB: {fromDB}")
 
 
 async def rch_shop_all(ITEMDB):
     TEST = 0
     SAVE_FOR_TEST = 1  # Saves data if TEST is False
-    EQ_MODE=0
+    EQ_MODE = 0
     shop = rch_shop_to_tab()
     if EQ_MODE:
-        shop=eq_to_tab()
+        shop = eq_to_tab()
 
     item_fetch_tasks = set()
     rows = []
-
 
     async with aiohttp.ClientSession() as session:
         ItemRust.set_session(session)
@@ -136,7 +136,6 @@ async def rch_shop_all(ITEMDB):
         obj_to_save = list()
 
         start_time = time.time()
-
 
         if TEST:
             with open('src/tmp_shop_data.json', 'r') as file:
@@ -163,10 +162,10 @@ async def rch_shop_all(ITEMDB):
             liqval = tmp[0]
             itemrust = tmp[1]
             rows.append({"name": itemrust.name,
-                           "rch_price": rch_price,
-                           "quantity": quantity,
-                           "liqval": liqval,
-                           "data": itemrust})
+                         "rch_price": rch_price,
+                         "quantity": quantity,
+                         "liqval": liqval,
+                         "data": itemrust})
 
         if SAVE_FOR_TEST:
             with open('src/tmp_shop_data.json', 'w') as f:
