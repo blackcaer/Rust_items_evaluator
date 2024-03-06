@@ -32,9 +32,9 @@ def rch_shop_to_tab():
 def eq_to_tab():
     with open('src/inventory.txt', 'r') as f:
         res = json.load(f)
-
+        # paste response from https://rustchance.com/api/account/inventory?refresh=false&flames=false
     tmp = []
-    for r in res:
+    for r in res["items"]:
         obj = {
             "name": r["market_hash_name"],
             "price": r["price"]/100,
@@ -73,9 +73,6 @@ def show_table_rchshop(values):
         value = itemrust.calc_value(price_rch)  # round(EF*liqval*price_sm ** (1 / 2),2)
         value_no_EF = itemrust.calc_value()
 
-        # TODO filtering (do it right xd)
-        # if price_sm<0.7 or perday<14:# or (price_sm<12 and liqval<1):
-        #    continue
         price_sp = itemrust.price_sp
         if price_sp is not None:
             spsm = round((price_sp / 100) / price_sm, 2)
@@ -123,8 +120,8 @@ def show_table_rchshop(values):
 
 async def rch_shop_all(ITEMDB):
     TEST = 0
-    SAVE_FOR_TEST = 0  # Saves data if TEST is False
-    EQ_MODE=1
+    SAVE_FOR_TEST = 1  # Saves data if TEST is False
+    EQ_MODE=0
     shop = rch_shop_to_tab()
     if EQ_MODE:
         shop=eq_to_tab()

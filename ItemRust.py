@@ -43,6 +43,13 @@ class ItemRust:
         self.timestamp = None   # Timestamp of last all_success update
         self.fromDB = False
 
+        self.perday = None
+        self.value = None
+        self.value_single = None    # Value if quantity of an item is 1
+        self.liqval = None
+        self.liqval_single = None   # Liqval if quantity of an item is 1
+
+
         if quantity<0:
             raise AttributeError("Quantity cannot be less than zero.")
         self.quantity = quantity
@@ -65,12 +72,17 @@ class ItemRust:
         else:
             self.fromDB = False
 
-        phsm = await self.get_pricehistory_sm_async(100)  # TODO zmienic gdy zrobie baze danych
+        phsm = await self.get_pricehistory_sm_async(100)
         iteminfo = await self.get_item_info_async()  # TODO run concurrently
         # shsm = await self.get_sale_offers_sm_async()
 
         if phsm.success:
             self.pricehistory_sm = phsm.data
+            self.perday = round(self.calc_sales_extrapolated_sm(30)["volume"] / 30,2)
+            self.value = self.calc_value(price_shop=None)
+            self.value_single = self.calc_value(price_shop=None,quantity=1)
+            self.liqval = self.calc_liqval()
+            self.liqval_single = self.calc_liqval(quantity=1)
             print(f"Price history success ({self.name})")
         else:
             print(f"Price history errors ({self.name}): " + str(phsm.errors))
@@ -171,7 +183,8 @@ class ItemRust:
 
     def calc_real_sales_sm(self, days_back=30):
         """ Calculate avg median price and volume on a specified number of days back.
-         If item's sales history is shorter, returns data from the actual period of time """
+         If item's sales history is shorter, returns data from the actual period of time
+         Returns {'price': float, 'volume': int}"""
         rounded_time = dt.now().replace(hour=0, minute=0, second=0, microsecond=0)
 
         start_date = rounded_time - timedelta(days=days_back)
@@ -185,13 +198,15 @@ class ItemRust:
         avg_median = 0 if volume_sum == 0 else round(
             median_sum / volume_sum, 2)  # Price is given as cents (price = 100 = 1$)
 
-        return {'price': avg_median, 'volume': volume_sum}
+        return {'price': avg_median, 'volume': int(volume_sum)}
 
     def calc_sales_extrapolated_sm(self, days_back=30):
         """ Calculate avg median price and volume for the certain period,
         If sales history is too short, extrapolate existing data for the whole period of time.
         If it's sales history is long enough, returns calc_sales_per_time_sm(days).
-        Mainly for calculating average volume per time """
+        Mainly for calculating average volume per time.
+        Returns {'price': float, 'volume': int}
+        If pricehistory_sm is None returns None """
         if self.pricehistory_sm is None:
             return None
 
@@ -209,7 +224,7 @@ class ItemRust:
 
         return result
 
-    def calc_liqval(self, quantity = None, MIN_LIQVAL_VALUE = 0.01):
+    def calc_liqval(self, quantity=None, MIN_LIQVAL_VALUE=0.01):
         """ Calculate liquidity value factor.
         Function made via graphic func creator (Desmos) to represent subjective liquidity value of an item
         based on it's.
@@ -267,15 +282,15 @@ class ItemRust:
         price_sm = self.price_sm / 100
         if price_shop is None:
             # We don't include price_rch in calculations
-            EF = 1
+            exchange_factor = 1
         elif isinstance(price_shop, (int, float)) and price_shop > 0:
-            EF = (price_sm / price_shop) ** 2  # Exchange factor
+            exchange_factor = (price_sm / price_shop) ** 2  # Exchange factor
         else:
             raise AttributeError("price_rch has to be number greater than 0")
 
         liqval = self.calc_liqval(quantity=quantity)
 
-        return round(EF * liqval * price_sm ** (1 / 2), 2)
+        return round(exchange_factor * liqval * price_sm ** (1 / 2), 2)
 
     # ========== Helper methods:
 

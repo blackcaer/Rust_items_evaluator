@@ -8,6 +8,63 @@ from ItemRustDatabase import ItemRustDatabase
 
 ITEMDB_FILE = "rustItemDatabase.txt"
 
+def display_prototype(items):
+    table = PrettyTable(reversesort=True)
+    table.field_names = ["name", "price_sm", "per_day (extr)", "liq_val", "value", "value4one", "sp/sm", "% sp/sm"]
+    rows = []
+    avgdata = {"prices": [], "values": []}  # data for weighted average
+
+    # create row names
+    # prepare data for rows
+    # filter / sort
+    # display
+
+
+    # prepare rows of prettytable
+    for curr_item in items:
+        name = curr_item.name
+        liqval = curr_item.calc_liqval()
+
+        if curr_item is not None and liqval is not None and curr_item.all_success:
+            price_sm = curr_item.price_sm / 100
+            value = curr_item.calc_value(None)
+            value4one = curr_item.calc_value(quantity=1)
+
+            price_sp = curr_item.price_sp
+            if price_sp is not None:
+                spsm = round((price_sp / 100) / price_sm, 2)
+                percentspsm = str(round((price_sp / 100) / price_sm * 100 - 100))
+            else:
+                spsm, percentspsm = "None", "None"
+
+            rows.append([str(curr_item.quantity) + " " + name,
+                         price_sm,
+                         round(curr_item.perday, 1),
+                         round(liqval, 2),
+                         value,
+                         value4one,
+                         spsm,
+                         percentspsm + "%"
+                         ])
+            for _ in range(curr_item.quantity):
+                avgdata["prices"].append(price_sm)
+                avgdata["values"].append(value)
+        else:
+            print(name + " FAILURE")
+
+    for row in rows:
+        table.add_row(row)
+
+    print("Sorting by sp/sm")
+    table.sortby = "sp/sm"
+    print(table)
+
+    print("Sorting by value")
+    table.sortby = "value"
+    print(table)
+
+
+
 def weighted_average(data, weights):
     if len(data) != len(weights):
         raise ValueError("Length of data and weights must be the same.")
@@ -26,7 +83,7 @@ def handle_input(lines):
     # <name> $<price>   - returns [{"name": _,"price":_,"quantity":_},...]
     # <name>            - returns [{"name": _,"quantity":_},...]
     #
-    # TODO handle multiple same items, return their quantity
+
     if ',' in lines[0]:
         raise RuntimeError("DONT USE COMMA")
 
