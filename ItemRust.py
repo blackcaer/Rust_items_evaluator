@@ -235,7 +235,7 @@ class ItemRust:
         if sales_ex is None:
             return None
         sold_per_day = sales_ex["volume"] / (30 + self._today_frac())
-        #MIN_SOLRPERDAY_VALUE = 0.04 # value of it *10 equals sold_per_day which will be lower border of liqval
+
         w2 = 7
         k1 = 0.4
         k2 = 1 / (w2 - (1 / k1))
@@ -257,8 +257,6 @@ class ItemRust:
         x = sold_per_day / 10.0  # Formula detail
         a = quantity / 10.0  # Formula detail
 
-        #if x <= MIN_SOLRPERDAY_VALUE:
-        #    func_evaluated = f1(MIN_SOLRPERDAY_VALUE)
         if 0 < x < 1 / k1:
             func_evaluated = f1(x)
         elif 1 / k1 <= x:
