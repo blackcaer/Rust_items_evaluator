@@ -17,42 +17,44 @@ def display_prototype(items):
     rows = []
     avgdata = {"prices": [], "values": []}  # data for weighted average
 
+    # TODO: przygotowac standardowe templatki (z enuma? w klasie? albo na razie w metodzie)
+    # TODO  ... do wyswietlania itemow
     # create row names
     # prepare data for rows
+        # prep some values, /100, round, calc etc.
+        # if sp has been fetched, show sp, otherwise show None
+        # create row, append
+        # prepare additional info, show (weighted average)
     # filter / sort
     # display
 
     # prepare rows of prettytable
     for curr_item in items:
-        name = curr_item.name
+
         liqval = curr_item.calc_liqval()
+        price_sm = curr_item.price_sm / 100
+        value = curr_item.calc_value(None)
+        value4one = curr_item.calc_value(quantity=1)
+        price_sp = curr_item.price_sp
 
-        if curr_item is not None and liqval is not None and curr_item.all_success:
-            price_sm = curr_item.price_sm / 100
-            value = curr_item.calc_value(None)
-            value4one = curr_item.calc_value(quantity=1)
-
-            price_sp = curr_item.price_sp
-            if price_sp is not None:
-                spsm = round((price_sp / 100) / price_sm, 2)
-                percentspsm = str(round((price_sp / 100) / price_sm * 100 - 100))
-            else:
-                spsm, percentspsm = "None", "None"
-
-            rows.append([str(curr_item.quantity) + " " + name,
-                         price_sm,
-                         round(curr_item.perday, 1),
-                         round(liqval, 2),
-                         value,
-                         value4one,
-                         spsm,
-                         percentspsm + "%"
-                         ])
-            for _ in range(curr_item.quantity):
-                avgdata["prices"].append(price_sm)
-                avgdata["values"].append(value)
+        if price_sp is not None:
+            spsm = round((price_sp / 100) / price_sm, 2)
+            percentspsm = str(round((price_sp / 100) / price_sm * 100 - 100))
         else:
-            print(name + " FAILURE")
+            spsm, percentspsm = "None", "None"
+
+        rows.append([str(curr_item.quantity) + " " + curr_item.name,
+                     price_sm,
+                     round(curr_item.perday, 1),
+                     round(liqval, 2),
+                     value,
+                     value4one,
+                     spsm,
+                     percentspsm + "%"
+                     ])
+        for _ in range(curr_item.quantity):
+            avgdata["prices"].append(price_sm)
+            avgdata["values"].append(value)
 
     for row in rows:
         table.add_row(row)
