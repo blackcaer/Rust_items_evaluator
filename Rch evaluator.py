@@ -1,4 +1,5 @@
 import asyncio
+import types
 from enum import Enum
 
 import aiohttp
@@ -63,17 +64,35 @@ def get_input():
 
 
 async def update_data(items_data):
-    item_fetch_tasks = set()
+    # TODO log to file success/failure
+    to_fetch = set()
     for item in items_data["items"]:
         item: ItemRust = item
-        item_fetch_tasks.add(asyncio.create_task(item.update_async()))
+        to_fetch.add({"name": item.name,
+                      "item": item,
+                      "task": asyncio.create_task(item.update_async())
+                      })
 
-    for task in item_fetch_tasks:
+    for record in to_fetch:
+        name, item, task = record["name"], record["item"], record["task"]
         await task
+        if item is not None and item.all_success:
+            print(f"{name}:  SUCCESS")
+        else:
+            print(f"{name}:  FAILURE")
 
 
 def display_items(items_data):
     pass
+
+
+def create_rows(data, *args):
+    rows = []
+    for arg in args:
+        if not (arg is list and len(arg) == 2 and arg[0] is str and arg[1] is types.FunctionType and callable(arg[1])):
+            raise ValueError("Incorrect arguments for " + create_rows.__name__)
+        rows.append([arg[0], arg[1](data)])
+    return rows
 
 
 async def main():
