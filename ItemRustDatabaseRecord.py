@@ -17,6 +17,8 @@ class ItemRustDatabaseRecord:
 
         self.value = None
 
+        self.hash_name = None
+
         self.save_data(itemrust)
 
     def save_data(self, itemrust):
@@ -34,11 +36,14 @@ class ItemRustDatabaseRecord:
         self.pricehistory_sp = itemrust.pricehistory_sp
         self.sales_histogram_sp = itemrust.sales_histogram_sp
 
-        self.value = itemrust.calc_value()
+        self.hash_name = itemrust.hash_name
+        self.value = itemrust.calc_value()  # TODO what if calc_value err? how to handle expiry date?
 
         self.timestamp = itemrust.timestamp
 
     def assign_data_to(self, itemrust):
+        itemrust.fromDB = True
+
         itemrust.name = self.name
         itemrust.iteminfo = self.iteminfo
 
@@ -50,7 +55,12 @@ class ItemRustDatabaseRecord:
         itemrust.pricehistory_sp = self.pricehistory_sp
         itemrust.sales_histogram_sp = self.sales_histogram_sp
 
+        itemrust.hash_name = self.hash_name
+
         itemrust.timestamp = self.timestamp
+
+        itemrust.all_success = True
+        itemrust.calc_phsm_vals()
 
     def calc_expiry_date(self, min_expiry_time=2, high_value=2.5, max_expiry_time=7, low_value=1.5,
                          expire_on_friday=True):
