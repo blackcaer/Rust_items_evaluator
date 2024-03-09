@@ -44,15 +44,15 @@ class ItemRust:
         self.timestamp = None  # Timestamp of last all_success update
         self.fromDB = False
 
-        self.perday = None
-        self.value = None
-        self.value_single = None  # Value if quantity of an item is 1
-        self.liqval = None
-        self.liqval_single = None  # Liqval if quantity of an item is 1
-
         if quantity < 0:
             raise AttributeError("Quantity cannot be less than zero.")
         self.quantity = quantity
+
+        self.perday = None
+        self.value = None
+        self.value_single = None  # Value if quantity of an item were 1
+        self.liqval = None
+        self.liqval_single = None  # Liqval if quantity of an item were 1
 
     async def update_async(self):
         """ Update item data """
@@ -67,7 +67,7 @@ class ItemRust:
             print("Reading data from DB for " + self.name)
             self.fromDB = True
             self.database.assign_data_to(self)
-            self.all_success = True
+
             return
         else:
             self.fromDB = False
@@ -78,11 +78,7 @@ class ItemRust:
 
         if phsm.success:
             self.pricehistory_sm = phsm.data
-            self.perday = round(self.calc_sales_extrapolated_sm(30)["volume"] / 30, 2)
-            self.value = self.calc_value(price_shop=None)
-            self.value_single = self.calc_value(price_shop=None, quantity=1)
-            self.liqval = self.calc_liqval()
-            self.liqval_single = self.calc_liqval(quantity=1)
+
             print(f"Price history success ({self.name})")
         else:
             print(f"Price history errors ({self.name}): " + str(phsm.errors))
@@ -113,6 +109,9 @@ class ItemRust:
 
         else:
             print(f"Item info errors ({self.name}): " + str(iteminfo.errors))
+
+        if phsm.success:
+            self.calc_phsm_vals()
 
         if phsm.success and iteminfo.success:  # and shsm.success
             self.all_success = True
@@ -290,6 +289,14 @@ class ItemRust:
 
         return round(exchange_factor * liqval * price_sm ** (1 / 2), 2)
 
+    def calc_phsm_vals(self):
+        # Some of it is dependent on previously fetched values (price_sm in value)
+        self.perday = round(self.calc_sales_extrapolated_sm(30)["volume"] / 30, 2)
+        self.value = self.calc_value(price_shop=None)
+        self.value_single = self.calc_value(price_shop=None, quantity=1)
+        self.liqval = self.calc_liqval()
+        self.liqval_single = self.calc_liqval(quantity=1)
+
     # ========== Helper methods:
 
     async def _get_json_async(self, url, params=None, headers=None, cookies=None, attempts=1, delay_ms=1000):
@@ -330,6 +337,8 @@ class ItemRust:
     def _parse_date(self, strdate):
         return dt.strptime(strdate, "%Y-%m-%dT%H:%M:%S")
 
+
+
     # ================================================= na kiedys:
 
     def get_price_sm(self):
@@ -350,3 +359,5 @@ class ItemRust:
 
     def get_offers_sp(self):
         pass
+
+
