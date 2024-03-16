@@ -70,20 +70,19 @@ def display_prototype(items):
 
 def display_prototype1(items):
     table = PrettyTable(reversesort=True)
-    #table.field_names = ["name", "price_sm", "per_day (extr)", "liq_val", "value", "value4one", "sp/sm", "% sp/sm"]
     rows = []
     avgdata = {"prices": [], "values": []}  # data for weighted average
 
     # TODO: przygotowac standardowe templatki (z enuma? w klasie? albo na razie w metodzie)
     # TODO  ... do wyswietlania itemow
-    # create row names
+    """# create row names
     # prepare data for rows
         # prep some values, /100, round, calc etc.
         # if sp has been fetched, show sp, otherwise show None
         # create row, append
         # prepare additional info, show (weighted average)
     # filter / sort
-    # display
+    # display"""
 
     def spsm_helper(item):
         if item.price_sp is not None:
@@ -92,7 +91,6 @@ def display_prototype1(items):
     # prepare rows of prettytable
     for curr_item in items:
         curr_item: ItemRust = curr_item
-        curr_item.price_sp=None
         (field_names,row)=create_fields_rows(curr_item,
                                              ["name",lambda item: item.name],
                                              ["price_sm",lambda item:item.price_sm/100],
@@ -102,47 +100,27 @@ def display_prototype1(items):
                                              ["price_sp",lambda item:item.price_sp/100 if item.price_sp is not None else None],
                                              ["sp/sm",lambda item:round(item.price_sp / item.price_sm, 2) if item.price_sp is not None else None]
                                              )
-        #["test",lambda item:spsm_helper(item)]
+
         rows.append(row)
         table.field_names = field_names
         continue
-        liqval = curr_item.calc_liqval()
-        price_sm = curr_item.price_sm / 100
-        value = curr_item.calc_value(None)
-        value4one = curr_item.calc_value(quantity=1)
-        price_sp = curr_item.price_sp
-
-        if price_sp is not None:
-            spsm = round((price_sp / 100) / price_sm, 2)
-            percentspsm = str(round((price_sp / 100) / price_sm * 100 - 100))
-        else:
-            spsm, percentspsm = "None", "None"
-
-        rows.append([str(curr_item.quantity) + " " + curr_item.name,
-                     price_sm,
-                     round(curr_item.perday, 1),
-                     round(liqval, 2),
-                     value,
-                     value4one,
-                     spsm,
-                     percentspsm + "%"
-                     ])
-        for _ in range(curr_item.quantity):
-            avgdata["prices"].append(price_sm)
-            avgdata["values"].append(value)
 
     for row in rows:
         table.add_row(row)
 
-    #print("Sorting by sp/sm")
-    #table.sortby = "sp/sm"
-    #print(table)
 
     print("Sorting by value")
     table.sortby = "value"
     print(table)
 
 def create_fields_rows(data, *args):
+    """
+    :param data: Object containing all the required data for display functions in args.
+    :param args: arg[0] - name of column arg[1]-  Functions creating cell for PrettyTable
+    :type args: (str,types.FunctionType)
+    :return: Tuple with
+    :rtype:
+    """
     row = []
     field_names=[]
     for arg in args:
@@ -155,7 +133,7 @@ def create_fields_rows(data, *args):
         #row.append([arg[0], arg[1](data)])
         row.append(arg[1](data))
         field_names.append(arg[0])
-    return (field_names, row)
+    return field_names, row
 
 
 def weighted_average(data, weights):

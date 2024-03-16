@@ -4,7 +4,8 @@ from enum import Enum
 
 import aiohttp
 
-import eval_helper as helper
+import input_helper as in_helper
+import display_helper as dp_helper
 from ItemRust import ItemRust
 from ItemRustDatabase import ItemRustDatabase
 
@@ -20,7 +21,7 @@ ITEMDB_FILE = "rustItemDatabase.txt"
 MODE = 0
 
 
-def handle_choices():
+async def handle_choices():
     global MODE
 
     ITEMDB = ItemRustDatabase(ITEMDB_FILE)
@@ -36,39 +37,65 @@ def handle_choices():
             nr = input("Provide input:")
             if not nr.isnumeric() or (int(nr) not in [mode.value for mode in Modes]):
                 raise ValueError("Bad option")
-            MODE = nr
+            MODE = Modes(int(nr))
 
             if MODE == 0:
                 exit()
 
-            items_data = get_input()
-            update_data(items_data)
+            data = get_input()
+            data["items"] = create_items(data)
+            await update_items(data["items"])
+            data["items"] = leave_only_success(data["items"])
 
-            display_items(items_data)
+            display_items(data)
 
             print()
+
+
+def leave_only_success(items):
+    return [item for item in items if (item is not None and item.all_success)]
+
+def create_items(data):
+    items = []
+    for item_data in data["items_data"]:
+        item = None
+        if MODE == Modes.EVAL_RCHSHOP:
+            item = ItemRust(item_data["name"],quantity=item_data["quantity"],price_rchshop=item_data["price"])
+        elif MODE == Modes.EVAL_EQ:
+            item = ItemRust(item_data["name"],quantity=item_data["quantity"])   # TODO: add price and calculating value with eq price (odwrotnosc EF prawdopodobnie)
+        elif MODE == Modes.EVAL_ITEMS:
+            item = ItemRust(item_data["name"], quantity=item_data["quantity"])
+        else:
+            raise NotImplementedError("Mode is not implemented (yet)")
+        items.append(item)
+    return items
 
 
 def get_input():
     # get input
     # format input
-    data = None
+    data = {"items_data" : []}  # items_data - name,price/site price,quantity
+
     if MODE == Modes.EVAL_ITEMS:
-        data = helper.get_input_console()
+        items_data = in_helper.get_input_console()
     elif MODE == Modes.EVAL_RCHSHOP:
-        data = helper.get_input_rchshop()
+        items_data = in_helper.get_input_rchshop()
     elif MODE == Modes.EVAL_EQ:
-        data = helper.get_input_eq()
+        items_data = in_helper.get_input_eq()
+    else:
+        raise NotImplementedError("Mode is not implemented (yet)")
+
+    data["items_data"] = items_data
 
     return data
 
 
-async def update_data(items_data):
+async def update_items(items):
     # TODO log to file success/failure
-    to_fetch = set()
-    for item in items_data["items"]:
+    to_fetch = list()
+    for item in items:
         item: ItemRust = item
-        to_fetch.add({"name": item.name,
+        to_fetch.append({"name": item.name,
                       "item": item,
                       "task": asyncio.create_task(item.update_async())
                       })
@@ -82,10 +109,14 @@ async def update_data(items_data):
             print(f"{name}:  FAILURE")
 
 
-def display_items(items_data):
-    pass
+def display_items(data):
+    if MODE==Modes.EVAL_ITEMS:
+        dp_helper.display_eval_items(data["items"])
+    else:
+        raise NotImplementedError("not implemented display")
 
 
+#?? delete?
 def create_rows(data, *args):
     rows = []
     for arg in args:
@@ -97,7 +128,10 @@ def create_rows(data, *args):
 
 async def main():
     # choose rchshop/rcheq/items/coinflips etc
-    handle_choices()
+    try:
+        await handle_choices()
+    finally:
+        ItemRust.database.save_database()
 
 
 if __name__ == "__main__":

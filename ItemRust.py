@@ -25,9 +25,10 @@ class ItemRust:
     def set_database(cls, database):
         cls.database: ItemRustDatabase = database
 
-    def __init__(self, name, quantity=1):
+    def __init__(self, name, quantity=1,price_rchshop=None):
         self.name = name
         self.hash_name = None
+        self.price_rchshop: float = price_rchshop
 
         self.all_success = False
 
@@ -274,7 +275,7 @@ class ItemRust:
         value of an item modified by exchange factor.
         price_shop - [optional] price in shop in USD (i.e. 12.44)
         quantity - if quantity of items is set to None, defaults to self.quantity"""
-        if quantity is not None:
+        if quantity is None:
             quantity = self.quantity
         price_sm = self.price_sm / 100
         if price_shop is None:

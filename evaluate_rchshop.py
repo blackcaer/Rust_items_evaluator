@@ -2,6 +2,7 @@ import asyncio
 import json
 import time
 import traceback
+import types
 from collections import Counter
 
 import aiohttp
