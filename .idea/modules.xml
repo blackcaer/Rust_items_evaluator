@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/basic_evaluators.iml" filepath="$PROJECT_DIR$/.idea/basic_evaluators.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../03_Steam_evaluators/.idea/03_Steam_evaluators.iml" filepath="$PROJECT_DIR$/../03_Steam_evaluators/.idea/03_Steam_evaluators.iml" />
     </modules>
   </component>
 </project>

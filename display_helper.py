@@ -1,7 +1,5 @@
 import types
-
 from prettytable import PrettyTable
-
 from ItemRust import ItemRust
 
 
@@ -10,16 +8,7 @@ def display_eval_items(items):
     rows = []
     avgdata = {"prices": [], "values": []}  # data for weighted average
 
-    # TODO: przygotowac standardowe templatki (z enuma? w klasie? albo na razie w metodzie)
-    # TODO  ... do wyswietlania itemow
-    """# create row names
-    # prepare data for rows
-        # prep some values, /100, round, calc etc.
-        # if sp has been fetched, show sp, otherwise show None
-        # create row, append
-        # prepare additional info, show (weighted average)
-    # filter / sort
-    # display"""
+    # TODO: przygotowac standardowe templatki (z enuma? w klasie? albo na razie w metodzie) do wyswietlania itemow
 
     def spsm_helper(item):
         if item.price_sp is not None:

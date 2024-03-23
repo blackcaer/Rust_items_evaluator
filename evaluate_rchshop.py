@@ -2,7 +2,6 @@ import asyncio
 import json
 import time
 import traceback
-import types
 from collections import Counter
 
 import aiohttp
@@ -11,6 +10,8 @@ from prettytable import PrettyTable
 
 from ItemRust import ItemRust
 from ItemRustDatabase import ItemRustDatabase
+
+
 
 ITEMDB_FILE = "rustItemDatabase.txt"
 
@@ -55,7 +56,10 @@ def eq_to_tab():
     return result
 
 
+FILTERS = True
+
 def show_table_rchshop(values):
+    global FILTERS
     rows = []
     values = [r for r in values
               if r["data"] is not None and r["liqval"] is not None and r["data"].all_success]
@@ -84,6 +88,10 @@ def show_table_rchshop(values):
         else:
             spsm, percentspsm = "None", "None"
 
+        if FILTERS:
+            if price_rch<5.0:
+                continue
+
         rows.append([record["name"],
                      record["quantity"],
                      str(round(price_sm / price_rch * 100 - 100)) + "%",
@@ -98,6 +106,7 @@ def show_table_rchshop(values):
                      ])
         if itemrust.fromDB:
             fromDB += 1
+
 
     for row in rows:
         table.add_row(row)
@@ -122,8 +131,9 @@ def show_table_rchshop(values):
 
 async def rch_shop_all(ITEMDB):
     TEST = 0
-    SAVE_FOR_TEST = 1  # Saves data if TEST is False
-    EQ_MODE = 0
+    SAVE_FOR_TEST = 0  # Saves data if TEST is False
+    EQ_MODE = 1
+
     shop = rch_shop_to_tab()
     if EQ_MODE:
         shop = eq_to_tab()
@@ -156,7 +166,6 @@ async def rch_shop_all(ITEMDB):
                 task = asyncio.create_task(fetch_and_calc(name))
                 item_fetch_tasks.add((task, rch_price, quantity))
 
-        # Normalny przebieg programu z fetchowaniem:
         for task, rch_price, quantity in item_fetch_tasks:
             tmp = await task
             obj_to_save.append([tmp, rch_price, quantity])
@@ -177,6 +186,8 @@ async def rch_shop_all(ITEMDB):
         end_time = time.time()
         execution_time = end_time - start_time
         print("Updating items took ", round(execution_time, 3), " sec")
+
+
 
         show_table_rchshop(rows)
 
