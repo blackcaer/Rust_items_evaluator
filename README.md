@@ -34,3 +34,4 @@ Some modes requires data to be put in another file as json.
 No support is provided since it was project for personal use only.
 
 Some modules may, or not not be publicly present on my github such as ItemRustDatabase, ItemRustDatabaseRecord, ItemRust etc.
+But if they are public, they should be in "ItemRust" repo.
